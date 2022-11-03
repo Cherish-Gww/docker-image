@@ -144,7 +144,12 @@ RUN pip3 install wheel pip -U &&\
 		     statistics numpy \
 		     imgtool \
 		     protobuf \
-		     GitPython
+		     GitPython \
+		     prettytable \
+		     paramiko \
+		     yakut \
+		     nunavut==1.3.0
+
 
 # Install BSIM
 RUN mkdir -p /opt/bsim && \
