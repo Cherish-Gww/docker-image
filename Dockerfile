@@ -19,6 +19,8 @@ SHELL ["/bin/bash", "-c"]
 # Set non-interactive frontend for apt-get to skip any user confirmations
 ENV DEBIAN_FRONTEND=noninteractive
 
+COPY sources.list /etc/apt/sources.list
+
 # Install base packages
 RUN apt-get -y update && \
 	apt-get -y upgrade && \
@@ -84,7 +86,9 @@ RUN apt-get -y update && \
 		valgrind \
 		wget \
 		ovmf \
-		xz-utils
+		xz-utils \
+		sed \
+		curl
 
 # Install multi-lib gcc (x86 only)
 RUN if [ "${HOSTTYPE}" = "x86_64" ]; then \
@@ -118,7 +122,7 @@ RUN if [ "${HOSTTYPE}" = "x86_64" ]; then \
 	; fi
 
 # Install CMake
-RUN wget ${WGET_ARGS} https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-Linux-${HOSTTYPE}.sh && \
+RUN wget ${WGET_ARGS} https://ghproxy.com/https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-Linux-${HOSTTYPE}.sh && \
 	chmod +x cmake-${CMAKE_VERSION}-Linux-${HOSTTYPE}.sh && \
 	./cmake-${CMAKE_VERSION}-Linux-${HOSTTYPE}.sh --skip-license --prefix=/usr/local && \
 	rm -f ./cmake-${CMAKE_VERSION}-Linux-${HOSTTYPE}.sh
@@ -129,15 +133,16 @@ RUN if [ "${HOSTTYPE}" = "x86_64" ]; then \
 	apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF && \
 	echo "deb https://download.mono-project.com/repo/ubuntu stable-bionic main" | tee /etc/apt/sources.list.d/mono-official-stable.list && \
 	apt-get -y update && \
-	wget ${WGET_ARGS} https://github.com/renode/renode/releases/download/v${RENODE_VERSION}/renode_${RENODE_VERSION}_amd64.deb && \
+	wget ${WGET_ARGS} https://ghproxy.com/https://github.com/renode/renode/releases/download/v${RENODE_VERSION}/renode_${RENODE_VERSION}_amd64.deb && \
 	apt-get install -y ./renode_${RENODE_VERSION}_amd64.deb && \
 	rm renode_${RENODE_VERSION}_amd64.deb \
 	; fi
 
 # Install Python dependencies
-RUN pip3 install wheel pip -U &&\
-	pip3 install -r https://raw.githubusercontent.com/zephyrproject-rtos/zephyr/master/scripts/requirements.txt && \
-	pip3 install -r https://raw.githubusercontent.com/zephyrproject-rtos/mcuboot/master/scripts/requirements.txt && \
+RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && \
+        pip3 install wheel pip -U &&\
+	pip3 install -r https://ghproxy.com/https://raw.githubusercontent.com/zephyrproject-rtos/zephyr/master/scripts/requirements.txt && \
+	pip3 install -r https://ghproxy.com/https://raw.githubusercontent.com/zephyrproject-rtos/mcuboot/master/scripts/requirements.txt && \
 	pip3 install west &&\
 	pip3 install sh &&\
 	pip3 install awscli PyGithub junitparser pylint \
@@ -155,9 +160,11 @@ RUN pip3 install wheel pip -U &&\
 RUN mkdir -p /opt/bsim && \
 	cd /opt/bsim && \
 	rm -f repo && \
-	wget ${WGET_ARGS} https://storage.googleapis.com/git-repo-downloads/repo && \
+	curl https://mirrors.tuna.tsinghua.edu.cn/git/git-repo -o repo && \
+	export REPO_URL='https://mirrors.tuna.tsinghua.edu.cn/git/git-repo' && \
 	chmod a+x ./repo && \
-	python3 ./repo init -u https://github.com/BabbleSim/manifest.git -m zephyr_docker.xml -b ${BSIM_VERSION} --depth 1 &&\
+	git config --global url."https://ghproxy.com/https://github.com/".insteadOf "https://github.com/" &&\
+	python3 ./repo init -u https://ghproxy.com/https://github.com/BabbleSim/manifest.git -m zephyr_docker.xml -b ${BSIM_VERSION} --depth 1 &&\
 	python3 ./repo sync && \
 	make everything -j 8 && \
 	echo ${BSIM_VERSION} > ./version && \
@@ -190,7 +197,7 @@ RUN mkdir -p /opt/sparse && \
 RUN mkdir -p /opt/protoc && \
 	cd /opt/protoc && \
 	PROTOC_HOSTTYPE=$(case $HOSTTYPE in x86_64) echo "x86_64";; aarch64) echo "aarch_64";; esac) && \
-	wget ${WGET_ARGS} https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-${PROTOC_HOSTTYPE}.zip && \
+	wget ${WGET_ARGS} https://ghproxy.com/https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-${PROTOC_HOSTTYPE}.zip && \
 	unzip protoc-${PROTOC_VERSION}-linux-${PROTOC_HOSTTYPE}.zip && \
 	ln -s /opt/protoc/bin/protoc /usr/local/bin && \
 	rm -f protoc-${PROTOC_VERSION}-linux-${PROTOC_HOSTTYPE}.zip
@@ -198,7 +205,7 @@ RUN mkdir -p /opt/protoc && \
 # Install Zephyr SDK
 RUN mkdir -p /opt/toolchains && \
 	cd /opt/toolchains && \
-	wget ${WGET_ARGS} https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZSDK_VERSION}/zephyr-sdk-${ZSDK_VERSION}_linux-${HOSTTYPE}.tar.gz && \
+	wget ${WGET_ARGS} https://ghproxy.com/https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZSDK_VERSION}/zephyr-sdk-${ZSDK_VERSION}_linux-${HOSTTYPE}.tar.gz && \
 	tar xf zephyr-sdk-${ZSDK_VERSION}_linux-${HOSTTYPE}.tar.gz && \
 	zephyr-sdk-${ZSDK_VERSION}/setup.sh -t all -h -c && \
 	rm zephyr-sdk-${ZSDK_VERSION}_linux-${HOSTTYPE}.tar.gz
