@@ -145,7 +145,7 @@ RUN wget ${WGET_ARGS} https://ghproxy.com/https://github.com/Kitware/CMake/relea
 # NOTE: Renode is currently only available for x86_64 host.
 RUN if [ "${HOSTTYPE}" = "x86_64" ]; then \
        wget ${WGET_ARGS} https://s3.cn-northwest-1.amazonaws.com.cn/mirrors.syriusrobotics.com/mono/mono-${MONO_VERSION}.tar.xz && \
-       tar xvf mono-${MONO_VERSION}.tar.xz && cd mono-${MONO_VERSION} && ./configure --prefix=/usr/local && make && make install && cd .. && rm -rf mono-${MONO_VERSION} && \
+       tar xvf mono-${MONO_VERSION}.tar.xz && cd mono-${MONO_VERSION} && ./configure --prefix=/usr/local && make && make install && cd .. && rm -rf mono-${MONO_VERSION}* && \
        wget ${WGET_ARGS} https://ghproxy.com/https://github.com/renode/renode/releases/download/v${RENODE_VERSION}/renode_${RENODE_VERSION}_amd64.deb && \
        apt-get install -y ./renode_${RENODE_VERSION}_amd64.deb && \
        rm renode_${RENODE_VERSION}_amd64.deb \
