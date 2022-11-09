@@ -9,6 +9,7 @@ ARG BSIM_VERSION=v1.0.3
 ARG SPARSE_VERSION=9212270048c3bd23f56c20a83d4f89b870b2b26e
 ARG PROTOC_VERSION=21.7
 ARG WGET_ARGS="-q --show-progress --progress=bar:force:noscroll --no-check-certificate"
+ARG MONO_VERSION=6.12.0.182
 
 ARG UID=1000
 ARG GID=1000
@@ -57,6 +58,7 @@ RUN apt-get -y update && \
 		libglib2.0-dev \
 		libgtk2.0-0 \
 		liblocale-gettext-perl \
+		gettext \
 		libncurses5-dev \
 		libpcap-dev \
 		libpopt0 \
@@ -115,7 +117,7 @@ ENV LC_ALL=en_US.UTF-8
 # Install Doxygen (x86 only)
 # NOTE: Pre-built Doxygen binaries are only available for x86_64 host.
 RUN if [ "${HOSTTYPE}" = "x86_64" ]; then \
-	wget ${WGET_ARGS} https://downloads.sourceforge.net/project/doxygen/rel-${DOXYGEN_VERSION}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz && \
+	wget ${WGET_ARGS} https://s3.cn-northwest-1.amazonaws.com.cn/mirrors.syriusrobotics.com/doxygen/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz && \
 	tar xf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz -C /opt && \
 	ln -s /opt/doxygen-${DOXYGEN_VERSION}/bin/doxygen /usr/local/bin && \
 	rm doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz \
@@ -129,14 +131,26 @@ RUN wget ${WGET_ARGS} https://ghproxy.com/https://github.com/Kitware/CMake/relea
 
 # Install renode (x86 only)
 # NOTE: Renode is currently only available for x86_64 host.
+#RUN if [ "${HOSTTYPE}" = "x86_64" ]; then \
+#	apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF && \
+#	echo "deb https://download.mono-project.com/repo/ubuntu stable-bionic main" | tee /etc/apt/sources.list.d/mono-official-stable.list && \
+#	apt-get -y update && \
+#	apt-get install -y mono-complete && \
+#	wget ${WGET_ARGS} https://ghproxy.com/https://github.com/renode/renode/releases/download/v${RENODE_VERSION}/renode_${RENODE_VERSION}_amd64.deb && \
+#	apt-get install -y ./renode_${RENODE_VERSION}_amd64.deb && \
+#	rm renode_${RENODE_VERSION}_amd64.deb \
+#	; fi
+
+# Install renode (x86 only)
+# NOTE: Renode is currently only available for x86_64 host.
 RUN if [ "${HOSTTYPE}" = "x86_64" ]; then \
-	apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF && \
-	echo "deb https://download.mono-project.com/repo/ubuntu stable-bionic main" | tee /etc/apt/sources.list.d/mono-official-stable.list && \
-	apt-get -y update && \
-	wget ${WGET_ARGS} https://ghproxy.com/https://github.com/renode/renode/releases/download/v${RENODE_VERSION}/renode_${RENODE_VERSION}_amd64.deb && \
-	apt-get install -y ./renode_${RENODE_VERSION}_amd64.deb && \
-	rm renode_${RENODE_VERSION}_amd64.deb \
+       wget ${WGET_ARGS} https://s3.cn-northwest-1.amazonaws.com.cn/mirrors.syriusrobotics.com/mono/mono-${MONO_VERSION}.tar.xz && \
+       tar xvf mono-${MONO_VERSION}.tar.xz && cd mono-${MONO_VERSION} && ./configure --prefix=/usr/local && make && make install && cd .. && rm -rf mono-${MONO_VERSION} && \
+       wget ${WGET_ARGS} https://ghproxy.com/https://github.com/renode/renode/releases/download/v${RENODE_VERSION}/renode_${RENODE_VERSION}_amd64.deb && \
+       apt-get install -y ./renode_${RENODE_VERSION}_amd64.deb && \
+       rm renode_${RENODE_VERSION}_amd64.deb \
 	; fi
+
 
 # Install Python dependencies
 RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && \
@@ -205,7 +219,7 @@ RUN mkdir -p /opt/protoc && \
 # Install Zephyr SDK
 RUN mkdir -p /opt/toolchains && \
 	cd /opt/toolchains && \
-	wget ${WGET_ARGS} https://ghproxy.com/https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZSDK_VERSION}/zephyr-sdk-${ZSDK_VERSION}_linux-${HOSTTYPE}.tar.gz && \
+	wget ${WGET_ARGS} https://s3.cn-northwest-1.amazonaws.com.cn/mirrors.syriusrobotics.com/zephyr-sdk/zephyr-sdk-${ZSDK_VERSION}_linux-${HOSTTYPE}.tar.gz && \
 	tar xf zephyr-sdk-${ZSDK_VERSION}_linux-${HOSTTYPE}.tar.gz && \
 	zephyr-sdk-${ZSDK_VERSION}/setup.sh -t all -h -c && \
 	rm zephyr-sdk-${ZSDK_VERSION}_linux-${HOSTTYPE}.tar.gz
