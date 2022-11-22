@@ -11,12 +11,16 @@ RUN apt-get -y update && \
 	x11vnc \
 	xvfb \
 	xterm \
-	xz-utils
+	xz-utils \
+	ssh-askpass
 
 # Clean up stale packages
 RUN apt-get clean -y && \
 	apt-get autoremove --purge -y && \
 	rm -rf /var/lib/apt/lists/*
+
+RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && \
+    pip3 install yakut nunavut==1.3.0 prettytable paramiko
 
 # Add entrypoint script
 ADD ./entrypoint.sh /home/user/entrypoint.sh
@@ -32,7 +36,6 @@ USER user
 
 # Configure environment variables
 ENV DISPLAY=:0
-ENV ZEPHYR_BASE=/workdir/zephyr
 
 # Set working directory
 WORKDIR /workdir
